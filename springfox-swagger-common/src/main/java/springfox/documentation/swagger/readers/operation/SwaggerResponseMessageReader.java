@@ -33,11 +33,14 @@ import springfox.documentation.builders.ExampleBuilder;
 import springfox.documentation.common.Compatibility;
 import springfox.documentation.schema.Example;
 import springfox.documentation.schema.TypeNameExtractor;
+import springfox.documentation.schema.plugins.SchemaPluginsManager;
 import springfox.documentation.schema.property.ModelSpecificationFactory;
 import springfox.documentation.service.Header;
 import springfox.documentation.service.Response;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spi.schema.EnumTypeDeterminer;
+import springfox.documentation.spi.schema.ValidatedProviderPlugin;
+import springfox.documentation.spi.schema.ViewProviderPlugin;
 import springfox.documentation.spi.schema.contexts.ModelContext;
 import springfox.documentation.spi.service.OperationBuilderPlugin;
 import springfox.documentation.spi.service.contexts.OperationContext;
@@ -72,6 +75,7 @@ public class SwaggerResponseMessageReader implements OperationBuilderPlugin {
   private final TypeResolver typeResolver;
   private final ModelSpecificationFactory modelSpecifications;
   private final DocumentationPluginsManager documentationPlugins;
+  private final SchemaPluginsManager pluginsManager;
 
   @Autowired
   public SwaggerResponseMessageReader(
@@ -79,12 +83,14 @@ public class SwaggerResponseMessageReader implements OperationBuilderPlugin {
       TypeNameExtractor typeNameExtractor,
       TypeResolver typeResolver,
       ModelSpecificationFactory modelSpecifications,
-      DocumentationPluginsManager documentationPlugins) {
+      DocumentationPluginsManager documentationPlugins,
+      SchemaPluginsManager schemaPluginsManager) {
     this.enumTypeDeterminer = enumTypeDeterminer;
     this.typeNameExtractor = typeNameExtractor;
     this.typeResolver = typeResolver;
     this.modelSpecifications = modelSpecifications;
     this.documentationPlugins = documentationPlugins;
+    this.pluginsManager = schemaPluginsManager;
   }
 
   @Override
@@ -126,6 +132,12 @@ public class SwaggerResponseMessageReader implements OperationBuilderPlugin {
     Set<springfox.documentation.service.ResponseMessage> responseMessages = new HashSet<>();
     Set<Response> responses = new HashSet<>();
 
+    ValidatedProviderPlugin validatedProviderPlugin =
+            pluginsManager.validatedProvider(context.getDocumentationContext().getDocumentationType());
+
+    ViewProviderPlugin viewProvider =
+            pluginsManager.viewProvider(context.getDocumentationContext().getDocumentationType());
+
     Map<Integer, ApiResponse> seenResponsesByCode = new HashMap<>();
     for (ApiResponse apiResponse : allApiResponses) {
       if (!seenResponsesByCode.containsKey(apiResponse.code())) {
@@ -139,7 +151,8 @@ public class SwaggerResponseMessageReader implements OperationBuilderPlugin {
         ModelContext modelContext = context.operationModelsBuilder()
             .addReturn(
                 typeResolver.resolve(apiResponse.response()),
-                Optional.empty());
+                viewProvider.viewFor(context),
+                    validatedProviderPlugin.validationFor(context));
         Optional<ResolvedType> type = resolvedType(apiResponse);
         if (isSuccessful(apiResponse.code())) {
           type = type.map(Optional::of).orElse(operationResponse);
@@ -201,7 +214,8 @@ public class SwaggerResponseMessageReader implements OperationBuilderPlugin {
     if (operationResponse.isPresent()) {
       ModelContext modelContext = context.operationModelsBuilder().addReturn(
           operationResponse.get(),
-          Optional.empty());
+          viewProvider.viewFor(context),
+          validatedProviderPlugin.validationFor(context));
       ResolvedType resolvedType = context.alternateFor(operationResponse.get());
 
       Map<String, String> knownNames = new HashMap<>();

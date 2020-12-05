@@ -12,6 +12,7 @@ import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Named;
 import springfox.documentation.schema.CollectionElementFacet;
+import springfox.documentation.schema.CompoundModelSpecification;
 import springfox.documentation.schema.ElementFacetSource;
 import springfox.documentation.schema.EnumerationFacet;
 import springfox.documentation.schema.ModelFacets;
