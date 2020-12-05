@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import springfox.documentation.schema.plugins.SchemaPluginsManager;
 import springfox.documentation.service.ResolvedMethodParameter;
 import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.schema.ValidatedProviderPlugin;
 import springfox.documentation.spi.schema.ViewProviderPlugin;
 import springfox.documentation.spi.service.OperationModelsProviderPlugin;
 import springfox.documentation.spi.service.contexts.RequestMappingContext;
@@ -38,6 +39,7 @@ import springfox.documentation.spi.service.contexts.RequestMappingContext;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static springfox.documentation.schema.ResolvedTypes.*;
 
@@ -82,7 +84,8 @@ public class OperationModelsProvider implements OperationModelsProviderPlugin {
     context.operationModelsBuilder()
            .addReturn(
                modelType,
-               viewForReturn(context));
+               viewForReturn(context),
+                   validatedForReturn(context));
   }
 
   private void collectParameters(RequestMappingContext context) {
@@ -103,7 +106,7 @@ public class OperationModelsProvider implements OperationModelsProviderPlugin {
             viewForParameter(
                 context,
                 parameterType),
-            new HashSet<>());
+                validatedForParameter(context, parameterType));
       }
     }
     LOG.debug(
@@ -125,5 +128,20 @@ public class OperationModelsProvider implements OperationModelsProviderPlugin {
         pluginsManager.viewProvider(context.getDocumentationContext().getDocumentationType());
     return viewProvider.viewFor(
         parameter);
+  }
+
+  private Set<ResolvedType> validatedForReturn(RequestMappingContext context) {
+    ValidatedProviderPlugin validatedProviderPlugin =
+        pluginsManager.validatedProvider(context.getDocumentationContext().getDocumentationType());
+    return validatedProviderPlugin.validationFor(context);
+  }
+
+  private Set<ResolvedType> validatedForParameter(
+     RequestMappingContext context,
+     ResolvedMethodParameter parameter) {
+
+    ValidatedProviderPlugin validatedProviderPlugin =
+        pluginsManager.validatedProvider(context.getDocumentationContext().getDocumentationType());
+    return validatedProviderPlugin.validationFor(parameter);
   }
 }

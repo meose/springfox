@@ -287,10 +287,11 @@ public class ModelSpecificationRegistryBuilder {
 
     @Override
     public boolean hasRequestResponsePairs(ModelKey test) {
-      ModelKey other = test.flippedResponse();
-      return modelsLookupByKey.containsKey(other)
-          && !areEquivalent(test, other)
-          && !areEquivalent(other, test);
+      return modelsLookupByKey.keySet().stream().anyMatch(mk ->
+              Objects.equals(mk.getQualifiedModelName(), test.getQualifiedModelName())
+                      && mk.isResponse() != test.isResponse()
+                      && mk.getViewDiscriminator() == test.getViewDiscriminator()
+      );
     }
 
     private boolean areEquivalent(

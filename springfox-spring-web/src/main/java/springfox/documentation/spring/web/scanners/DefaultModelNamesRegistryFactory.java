@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -35,7 +36,7 @@ public class DefaultModelNamesRegistryFactory implements ModelNamesRegistryFacto
   private static class DefaultModelNamesRegistry implements ModelNamesRegistry {
     private final ModelSpecificationRegistry modelRegistry;
     private final Map<ModelKey, String> modelStems = new HashMap<>();
-    private final Map<Set<ResolvedType>, String> validationSuffixes = new HashMap<>();
+    private final Map<ModelKey, String> validationSuffixes = new HashMap<>();
     private final Map<ModelKey, String> requestResponseSuffixes = new HashMap<>();
     private final Map<ModelKey, String> modelKeyToName;
 
@@ -51,7 +52,7 @@ public class DefaultModelNamesRegistryFactory implements ModelNamesRegistryFacto
                   "%s%s%s",
                   modelStems.get(k),
                   validationSuffixes.getOrDefault(
-                      k.getValidationGroupDiscriminators(),
+                      k,
                       ""),
                   requestResponseSuffixes.getOrDefault(
                       k,
@@ -97,9 +98,18 @@ public class DefaultModelNamesRegistryFactory implements ModelNamesRegistryFacto
       return modelSuffix;
     }
 
+    public String getModelPostfixIndex(ModelKey test) {
+      long count = modelStems.keySet().stream()
+              .filter(mk -> mk.getQualifiedModelName().equals(test.getQualifiedModelName())
+                      && Objects.equals(mk.getViewDiscriminator(), test.getViewDiscriminator())
+                      && mk.isResponse() == test.isResponse()
+                      && !Objects.equals(mk.getValidationGroupDiscriminators(), test.getValidationGroupDiscriminators()))
+              .count();
+      return count == 0 ? "" : String.valueOf(count);
+    }
+
     private void processKeys(ModelKey modelKey) {
       boolean hasRequestResponsePair = modelRegistry.hasRequestResponsePairs(modelKey);
-      Collection<ModelKey> validationModels = modelRegistry.modelsDifferingOnlyInValidationGroups(modelKey);
       Collection<ModelKey> sameNameDifferentNamespace = modelRegistry.modelsWithSameNameAndDifferentNamespace(modelKey);
       int index = 0;
       for (ModelKey key : sameNameDifferentNamespace) {
@@ -115,14 +125,8 @@ public class DefaultModelNamesRegistryFactory implements ModelNamesRegistryFacto
       modelStems.computeIfAbsent(
           modelKey,
           k -> k.getQualifiedModelName().getName());
-      index = 0;
-      for (ModelKey key : validationModels) {
-        int modelIndex = index;
-        validationSuffixes.computeIfAbsent(
-            key.getValidationGroupDiscriminators(),
-            k -> modelIndex == 0 ? "" : "_" + modelIndex);
-        index++;
-      }
+
+      validationSuffixes.computeIfAbsent(modelKey, k -> getModelPostfixIndex(modelKey));
       if (hasRequestResponsePair) {
         requestResponseSuffixes.computeIfAbsent(
             modelKey,
