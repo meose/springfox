@@ -52,7 +52,7 @@ public class NotBlankAnnotationPlugin implements ModelPropertyBuilderPlugin {
   @SuppressWarnings("deprecation")
   public void apply(ModelPropertyContext context) {
     Optional<NotBlank> notBlank = extractAnnotation(context);
-    if (notBlank.isPresent()) {
+    if (notBlank.isPresent() && mustBeAppliedAccordingToValidationGroups(context, notBlank.get())) {
       context.getBuilder().required(true);
       context.getSpecificationBuilder().required(true);
     }
@@ -62,5 +62,9 @@ public class NotBlankAnnotationPlugin implements ModelPropertyBuilderPlugin {
     return annotationFromBean(context, NotBlank.class)
         .map(Optional::of)
         .orElse(annotationFromField(context, NotBlank.class));
+  }
+
+  private boolean mustBeAppliedAccordingToValidationGroups(ModelPropertyContext context, NotBlank notBlank) {
+    return Validators.existsIntersectionBetweenValidationGroups(context, notBlank.groups());
   }
 }

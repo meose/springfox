@@ -39,6 +39,10 @@ public class PatternAnnotationPlugin implements ModelPropertyBuilderPlugin {
   @SuppressWarnings("deprecation")
   public void apply(ModelPropertyContext context) {
     Optional<Pattern> pattern = extractAnnotation(context, Pattern.class);
+    if (pattern.isPresent() && !mustBeAppliedAccordingToValidationGroups(context, pattern.get())) {
+      pattern = Optional.empty();
+    }
+
     String patternValueFromAnnotation = createPatternValueFromAnnotation(pattern);
     context.getBuilder().pattern(patternValueFromAnnotation);
     if (patternValueFromAnnotation != null) {
@@ -58,5 +62,9 @@ public class PatternAnnotationPlugin implements ModelPropertyBuilderPlugin {
       patternValue = pattern.get().regexp();
     }
     return patternValue;
+  }
+
+  private boolean mustBeAppliedAccordingToValidationGroups(ModelPropertyContext context, Pattern pattern) {
+    return Validators.existsIntersectionBetweenValidationGroups(context, pattern.groups());
   }
 }

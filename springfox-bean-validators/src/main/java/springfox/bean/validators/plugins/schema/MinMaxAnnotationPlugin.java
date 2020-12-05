@@ -55,6 +55,14 @@ public class MinMaxAnnotationPlugin implements ModelPropertyBuilderPlugin {
     Optional<Min> min = extractMin(context);
     Optional<Max> max = extractMax(context);
 
+    if (min.isPresent() && !mustBeAppliedAccordingToValidationGroups(context, min.get())) {
+      min = Optional.empty();
+    }
+
+    if (max.isPresent() && !mustBeAppliedAccordingToValidationGroups(context, max.get())) {
+      max = Optional.empty();
+    }
+
     // add support for @Min/@Max
     Compatibility<AllowableRangeValues, NumericElementFacet> values = allowableRange(min, max);
     LOGGER.debug(String.format(
@@ -79,5 +87,13 @@ public class MinMaxAnnotationPlugin implements ModelPropertyBuilderPlugin {
 
   private Optional<Max> extractMax(ModelPropertyContext context) {
     return annotationFromBean(context, Max.class).map(Optional::of).orElse(annotationFromField(context, Max.class));
+  }
+
+  public static boolean mustBeAppliedAccordingToValidationGroups(ModelPropertyContext context, Max max) {
+    return Validators.existsIntersectionBetweenValidationGroups(context, max.groups());
+  }
+
+  public static boolean mustBeAppliedAccordingToValidationGroups(ModelPropertyContext context, Min min) {
+    return Validators.existsIntersectionBetweenValidationGroups(context, min.groups());
   }
 }

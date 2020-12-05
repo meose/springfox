@@ -21,6 +21,7 @@ package springfox.bean.validators.plugins.schema;
 
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import springfox.bean.validators.plugins.Validators;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spi.schema.ModelPropertyBuilderPlugin;
 import springfox.documentation.spi.schema.contexts.ModelPropertyContext;
@@ -49,12 +50,16 @@ public class IsNullAnnotationPlugin implements ModelPropertyBuilderPlugin {
   @Override
   public void apply(ModelPropertyContext context) {
     Optional<Null> isNull = extractAnnotation(context);
-    if (isNull.isPresent()) {
-      context.getBuilder().readOnly(isNull.isPresent());
+    if (isNull.isPresent() && mustBeAppliedAccordingToValidationGroups(context, isNull.get())) {
+      context.getBuilder().readOnly(true);
     }
   }
 
   private Optional<Null> extractAnnotation(ModelPropertyContext context) {
     return annotationFromBean(context, Null.class).map(Optional::of).orElse(annotationFromField(context, Null.class));
+  }
+
+  private boolean mustBeAppliedAccordingToValidationGroups(ModelPropertyContext context, Null isNull) {
+    return Validators.existsIntersectionBetweenValidationGroups(context, isNull.groups());
   }
 }

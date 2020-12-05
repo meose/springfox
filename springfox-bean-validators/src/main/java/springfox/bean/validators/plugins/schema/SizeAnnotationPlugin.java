@@ -47,6 +47,9 @@ public class SizeAnnotationPlugin implements ModelPropertyBuilderPlugin {
   @SuppressWarnings("deprecation")
   public void apply(ModelPropertyContext context) {
     Optional<Size> size = extractAnnotation(context);
+    if (size.isPresent() && !mustBeAppliedAccordingToValidationGroups(context, size.get())) {
+      size = Optional.empty();
+    }
 
     size.ifPresent(size1 -> {
       AllowableRangeValues allowableRangeValues = stringLengthRange(size1);
@@ -70,5 +73,9 @@ public class SizeAnnotationPlugin implements ModelPropertyBuilderPlugin {
 
   Optional<Size> extractAnnotation(ModelPropertyContext context) {
     return annotationFromBean(context, Size.class).map(Optional::of).orElse(annotationFromField(context, Size.class));
+  }
+
+  public static boolean mustBeAppliedAccordingToValidationGroups(ModelPropertyContext context, Size size) {
+    return Validators.existsIntersectionBetweenValidationGroups(context, size.groups());
   }
 }

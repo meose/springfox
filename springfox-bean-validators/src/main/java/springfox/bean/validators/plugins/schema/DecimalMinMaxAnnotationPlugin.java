@@ -58,6 +58,14 @@ public class DecimalMinMaxAnnotationPlugin implements ModelPropertyBuilderPlugin
     Optional<DecimalMin> min = extractAnnotation(context, DecimalMin.class);
     Optional<DecimalMax> max = extractAnnotation(context, DecimalMax.class);
 
+    if (min.isPresent() && !mustBeAppliedAccordingToValidationGroups(context, min.get())) {
+      min = Optional.empty();
+    }
+
+    if (max.isPresent() && !mustBeAppliedAccordingToValidationGroups(context, max.get())) {
+      max = Optional.empty();
+    }
+
     // add support for @DecimalMin/@DecimalMax
     Compatibility<AllowableValues, NumericElementFacet> values =
         facetFromDecimalMinMaxForNumbers(min, max);
@@ -115,4 +123,11 @@ public class DecimalMinMaxAnnotationPlugin implements ModelPropertyBuilderPlugin
     return new Compatibility<>(myvalues, numericFacet);
   }
 
+  private boolean mustBeAppliedAccordingToValidationGroups(ModelPropertyContext context, DecimalMax max) {
+    return Validators.existsIntersectionBetweenValidationGroups(context, max.groups());
+  }
+
+  private boolean mustBeAppliedAccordingToValidationGroups(ModelPropertyContext context, DecimalMin min) {
+    return Validators.existsIntersectionBetweenValidationGroups(context, min.groups());
+  }
 }

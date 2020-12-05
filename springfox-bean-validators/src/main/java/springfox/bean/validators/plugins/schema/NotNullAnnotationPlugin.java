@@ -51,7 +51,7 @@ public class NotNullAnnotationPlugin implements ModelPropertyBuilderPlugin {
   @SuppressWarnings("deprecation")
   public void apply(ModelPropertyContext context) {
     Optional<NotNull> notNull = extractAnnotation(context);
-    if (notNull.isPresent()) {
+    if (notNull.isPresent() && mustBeAppliedAccordingToValidationGroups(context, notNull.get())) {
       context.getBuilder().required(true);
       context.getSpecificationBuilder().required(true);
     }
@@ -61,5 +61,9 @@ public class NotNullAnnotationPlugin implements ModelPropertyBuilderPlugin {
     return annotationFromBean(context, NotNull.class)
         .map(Optional::of)
         .orElse(annotationFromField(context, NotNull.class));
+  }
+
+  private boolean mustBeAppliedAccordingToValidationGroups(ModelPropertyContext context, NotNull notNull) {
+    return Validators.existsIntersectionBetweenValidationGroups(context, notNull.groups());
   }
 }
