@@ -12,7 +12,7 @@ public interface ModelSpecificationRegistry {
 
   boolean hasRequestResponsePairs(ModelKey test);
 
-  Map<ModelKey, String> getPostfixForModelsDifferingOnlyInvalidationGroups(ModelKey test);
+  Map<ModelKey, String> getSuffixesForEqualsModels(ModelKey test);
 
   Collection<ModelKey> modelsWithSameNameAndDifferentNamespace(ModelKey test);
 

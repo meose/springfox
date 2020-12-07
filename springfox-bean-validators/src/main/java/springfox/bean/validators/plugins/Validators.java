@@ -30,12 +30,14 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static java.util.Optional.*;
+import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
 
 /**
  * Utility methods for Validators
@@ -115,11 +117,23 @@ public class Validators {
       return true;
     }
 
-    Set<Class<?>> groupsInConstraintAnnotation = new HashSet<>(Arrays.asList(groupsAnnotationArray));
+    Set<Class<?>> groupsInConstraintAnnotation = Stream.of(groupsAnnotationArray)
+                                                       .flatMap(i -> getSuperClasses(i).stream())
+                                                       .collect(Collectors.toSet());
     if (groupsInConstraintAnnotation.isEmpty()) {
       return true;
     }
 
     return groupsInValidatedAnnotation.stream().anyMatch(i -> groupsInConstraintAnnotation.contains(i.getErasedType()));
+  }
+
+  public static Set<Class<?>> getSuperClasses(Class<?> c) {
+    Set<Class<?>> classSet = new HashSet<>();
+    classSet.add(c);
+    for (Class<?> superclass = c ; superclass != null; c = superclass) {
+      classSet.add(superclass);
+      superclass = c.getSuperclass();
+    }
+    return classSet;
   }
 }

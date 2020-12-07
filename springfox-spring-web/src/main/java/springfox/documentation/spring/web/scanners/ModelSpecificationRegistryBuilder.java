@@ -302,14 +302,14 @@ public class ModelSpecificationRegistryBuilder {
     }
 
     @Override
-    public Map<ModelKey, String> getPostfixForModelsDifferingOnlyInvalidationGroups(ModelKey test) {
+    public Map<ModelKey, String> getSuffixesForEqualsModels(ModelKey test) {
       AtomicInteger count = new AtomicInteger(0);
       return modelsLookupByKey.keySet().stream()
-              .filter(mk -> mk.getQualifiedModelName().equals(test.getQualifiedModelName())
-                      && Objects.equals(mk.getViewDiscriminator(), test.getViewDiscriminator())
-                      && mk.isResponse() == test.isResponse()
-                      && !areEquivalent(mk, test))
-              .collect(Collectors.toMap(Function.identity(), i -> {
+              .filter(mk -> mk.getQualifiedModelName().equals(test.getQualifiedModelName()))
+              .filter(mk -> Objects.equals(mk.getViewDiscriminator(), test.getViewDiscriminator()))
+              .filter(mk -> mk.isResponse() == test.isResponse())
+              .filter(mk -> !areEquivalent(mk, test))
+              .collect(Collectors.toMap(Function.identity(), v -> {
                 int index = count.getAndIncrement();
                 return index == 0 ? "" : String.valueOf(index);
               }));
