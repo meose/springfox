@@ -308,7 +308,7 @@ public class ModelSpecificationRegistryBuilder {
               .filter(mk -> mk.getQualifiedModelName().equals(test.getQualifiedModelName()))
               .filter(mk -> Objects.equals(mk.getViewDiscriminator(), test.getViewDiscriminator()))
               .filter(mk -> mk.isResponse() == test.isResponse())
-              .filter(mk -> areEquivalent(mk, test))
+              .filter(mk -> !areEquivalent(mk, test))
               .collect(Collectors.toMap(Function.identity(), v -> {
                 int index = count.getAndIncrement();
                 return index == 0 ? "" : String.valueOf(index);
