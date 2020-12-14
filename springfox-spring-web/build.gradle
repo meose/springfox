@@ -1,3 +1,9 @@
+plugins {
+  id 'java-library'
+  id 'maven'
+  id 'maven-publish'
+}
+
 ext {
   limits = [
       'instruction': 96.5,

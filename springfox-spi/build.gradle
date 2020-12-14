@@ -1,3 +1,9 @@
+plugins {
+  id 'java-library'
+  id 'maven'
+  id 'maven-publish'
+}
+
 dependencies {
   api project(':springfox-core')
   compileOnly libs.clientProvided
