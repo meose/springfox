@@ -18,6 +18,7 @@
  */
 package springfox.bean.validators.plugins;
 
+import com.fasterxml.classmate.ResolvedType;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -25,13 +26,20 @@ import springfox.documentation.service.ResolvedMethodParameter;
 import springfox.documentation.spi.schema.contexts.ModelPropertyContext;
 import springfox.documentation.spi.service.contexts.ParameterContext;
 
+import javax.validation.groups.Default;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static java.util.Optional.*;
+import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
 
 /**
  * Utility methods for Validators
@@ -100,5 +108,43 @@ public class Validators {
       Class<T> annotationType) {
     return annotatedElement
         .map(annotated -> AnnotationUtils.findAnnotation(annotated, annotationType));
+  }
+
+  public static boolean annotationMustBeApplied(ModelPropertyContext context, Class<?>[] groupsConstraint) {
+    // Case #1: @Validated and @Valid is not presented
+    // set of resolved type must be empty. This case breaks tests. Return must be true.
+    Set<ResolvedType> validatedGroups = context.getOwner().getValidationGroups();
+    if (validatedGroups.isEmpty()) {
+      return false;
+    }
+
+    Set<Class<?>> validatedGroupsClasses = getGroupClasses(validatedGroups.stream().map(ResolvedType::getErasedType));
+    Set<Class<?>> constraintGroupClasses = Stream.of(groupsConstraint).collect(Collectors.toSet());
+
+    // Case #2: Validated groups contains Default.class
+    // Constrain groups contains Default.class
+    if (validatedGroupsClasses.contains(Default.class)) {
+      return constraintGroupClasses.isEmpty() || constraintGroupClasses.contains(Default.class);
+    }
+
+    // Case #3: Validated groups does not contain Default.class
+    // Constrain groups may contain Default.class
+    return !Collections.disjoint(validatedGroupsClasses, constraintGroupClasses);
+  }
+
+  private static Set<Class<?>> getGroupClasses(Stream<Class<?>> stream) {
+    return stream.flatMap(i -> getAllInterfaces(i).stream()).collect(Collectors.toSet());
+  }
+
+  public static Set<Class<?>> getAllInterfaces(Class<?> c) {
+    Set<Class<?>> set = new HashSet<>();
+    if (!c.isInterface()) {
+      return set;
+    }
+    set.add(c);
+    for (Class<?> superInterfaces : c.getInterfaces()) {
+      set.addAll(getAllInterfaces(superInterfaces));
+    }
+    return set;
   }
 }
