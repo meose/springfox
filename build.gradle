@@ -25,7 +25,7 @@ apply from: "$rootDir/gradle/dependencies.gradle"
 apply from: "$rootDir/gradle/ide.gradle"
 
 allprojects {
-  version = '3.0.1-ecps'
+  version = '3.0.2-ecps'
   apply plugin: 'jacoco'
 
   repositories {

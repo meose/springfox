@@ -121,10 +121,9 @@ public class Validators {
     Set<Class<?>> validatedGroupsClasses = getGroupClasses(validatedGroups.stream().map(ResolvedType::getErasedType));
     Set<Class<?>> constraintGroupClasses = Stream.of(groupsConstraint).collect(Collectors.toSet());
 
-    // Case #2: Validated groups contains Default.class
-    // Constrain groups contains Default.class
-    if (validatedGroupsClasses.contains(Default.class)) {
-      return constraintGroupClasses.isEmpty() || constraintGroupClasses.contains(Default.class);
+    // Case #2: constraintGroupClasses is empty
+    if (constraintGroupClasses.isEmpty()) {
+      constraintGroupClasses.add(Default.class);
     }
 
     // Case #3: Validated groups does not contain Default.class
